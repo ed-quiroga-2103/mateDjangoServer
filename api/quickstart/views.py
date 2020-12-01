@@ -34,6 +34,8 @@ class GroupViewSet(viewsets.ModelViewSet):
 
 
 
+
+
 def token_required(f):
     @wraps(f)
     @api_view(['GET','POST'])
@@ -72,10 +74,17 @@ def main_graph(request, current_user):
 
 @api_view(['GET','POST'])
 def login(request):
+    
 
-    user = mongo_driver.get_user(request.data['user'])
+    params = {"user":request.data["user"],"pass":request.data["pass"]}
+
+
+    user = mongo_driver.get_user(params)
 
     if isinstance(user, bool):
+
+        print("NO EXISTE")
+
         mongo_driver.create_user(request.data)
 
         time_limit = datetime.datetime.utcnow() + datetime.timedelta(minutes=30) #set limit for user
@@ -91,14 +100,29 @@ def login(request):
         print()
         token = jwt.encode(payload,"SECRET_KEY").decode('UTF-8')
 
-        print(token)
+        data_str = mongo_driver.get_main_graph()
 
-        return JsonResponse({'token':token}, safe=False)
+        return JsonResponse({'token':token, 'data':data_str}, safe=False)
 
     else:
+
+        print("EXISTE")
         
+
+        data_str = mongo_driver.get_main_graph()
         time_limit = datetime.datetime.utcnow() + datetime.timedelta(minutes=30) #set limit for user
         request.data['exp'] = time_limit
         payload = request.data
-        token = jwt.encode(payload,"SECRET_KEY")
-        return JsonResponse({'token':token}, safe=False)
+        token = jwt.encode(payload,"SECRET_KEY").decode('UTF-8')
+        return JsonResponse({'token':token,'data':data_str}, safe=False)
+
+
+
+
+@api_view(['GET','POST'])
+def get_user_level(request):
+    print(request.data)
+    param = request.data
+    user = mongo_driver.get_user_level(param)
+
+    return JsonResponse({'msg':user}, safe=False)

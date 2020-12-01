@@ -40,16 +40,20 @@ class MongoDriver:
         try:
 
             dblist = self.myclient.list_database_names()
-            
             if "mate" in dblist:
             
                 mycol = self.mydb["users"]
 
-                graph = {"graph_id":user}
+                query = user
+                #Query: Datos del request, Ejm:{'user':'admin@email.com'}
+                #Segundo parametro: Exclusion de la columna de id
+                #[0]: Primer elemento de la lista, debería ser el único.
+                result = mycol.find(query,{'_id':0})[0]
 
-                return mycol.find(graph,{'_id':0})[0]
+                return result
 
         except IndexError as e:
+            print("ERROR")
             print(e)        
             return False
 
@@ -64,8 +68,17 @@ class MongoDriver:
             print(e)        
             return False
 
+    def get_user_level(self, user):
+        
+        param = {"user":user["user"], "pass": user["pass"]}
+
+        userData = self.get_user(param)
+
+        return userData['data']
+
+
+
+
 
 
 mongo_driver = MongoDriver("mate")
-
-print(mongo_driver.get_user('user'))

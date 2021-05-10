@@ -28,5 +28,8 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('graph/mainGraph',views.main_graph),
     path('login', views.login),
-    path('userLevel', views.get_user_level)
+    path('userLevel', views.get_user_level),
+    path('topicGraph', views.get_topic_graph),
+    path('all_questions', views.get_questions),
+    path('update_progress', views.update_progress)
 ]

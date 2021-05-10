@@ -47,6 +47,11 @@ def token_required(f):
         if not token:
             return JsonResponse({'msg':'no token'}, safe=False)
 
+        try:
+            data = jwt.decode(token, 'SECRET_KEY')
+            print(data)
+        except:
+            return JsonResponse({'msg': 'decode error'}, safe=False)
         try: 
             data = jwt.decode(token, 'SECRET_KEY')
             current_user = data["user"]
@@ -75,19 +80,19 @@ def main_graph(request, current_user):
 @api_view(['GET','POST'])
 def login(request):
     
-
     params = {"user":request.data["user"],"pass":request.data["pass"]}
+
 
 
     user = mongo_driver.get_user(params)
 
-    if isinstance(user, bool):
+    print("USER FROM MONGO: ", user)
 
-        print("NO EXISTE")
+    if user == None or isinstance(user, bool):
 
-        mongo_driver.create_user(request.data)
+        user = mongo_driver.create_user(request.data)
 
-        time_limit = datetime.datetime.utcnow() + datetime.timedelta(minutes=30) #set limit for user
+        time_limit = datetime.datetime.utcnow() + datetime.timedelta(minutes=180) #Tiempo límite, no se valida en el servidor por el momento, solo en VueJS
         request.data['exp'] = time_limit
         payload = request.data
         del request.data['_id']
@@ -101,23 +106,19 @@ def login(request):
         token = jwt.encode(payload,"SECRET_KEY").decode('UTF-8')
 
         data_str = mongo_driver.get_main_graph()
-
-        return JsonResponse({'token':token, 'data':data_str}, safe=False)
+        info = mongo_driver.get_graph_info()
+        return JsonResponse({'token':token, 'data':data_str, 'user':user, 'info':info}, safe=False)
 
     else:
-
-        print("EXISTE")
         
 
         data_str = mongo_driver.get_main_graph()
-        time_limit = datetime.datetime.utcnow() + datetime.timedelta(minutes=30) #set limit for user
+        info = mongo_driver.get_graph_info()
+        time_limit = datetime.datetime.utcnow() + datetime.timedelta(minutes=30) #Tiempo límite, no se valida en el servidor por el momento, solo en VueJS
         request.data['exp'] = time_limit
         payload = request.data
         token = jwt.encode(payload,"SECRET_KEY").decode('UTF-8')
-        return JsonResponse({'token':token,'data':data_str}, safe=False)
-
-
-
+        return JsonResponse({'token':token,'data':data_str, 'info':info, 'user':user}, safe=False)
 
 @api_view(['GET','POST'])
 def get_user_level(request):
@@ -126,3 +127,28 @@ def get_user_level(request):
     user = mongo_driver.get_user_level(param)
 
     return JsonResponse({'msg':user}, safe=False)
+
+@api_view(['GET','POST'])
+def get_topic_graph(request):
+    print(request.data)
+    param = request.data['level']
+    graph = mongo_driver.get_topic_graph(param)
+
+    return JsonResponse({'msg':graph}, safe=False)
+
+@api_view(['GET','POST'])
+def get_questions(request):
+    print(request.data)
+
+    questions = mongo_driver.get_exercise({})
+
+    return JsonResponse({'data':questions}, safe=False)
+
+@token_required
+def update_progress(current_user, request):
+
+    print("DATA",request.data)
+
+    check = mongo_driver.update_progress(request.data, current_user)
+
+    return JsonResponse({'data': check}, safe= False)

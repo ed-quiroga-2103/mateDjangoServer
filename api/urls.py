@@ -31,5 +31,6 @@ urlpatterns = [
     path('userLevel', views.get_user_level),
     path('topicGraph', views.get_topic_graph),
     path('all_questions', views.get_questions),
-    path('update_progress', views.update_progress)
+    path('update_progress', views.update_progress),
+    path('registration', views.register_user)
 ]

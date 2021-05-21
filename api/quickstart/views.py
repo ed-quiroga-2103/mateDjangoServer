@@ -82,32 +82,13 @@ def login(request):
     
     params = {"user":request.data["user"],"pass":request.data["pass"]}
 
-
-
     user = mongo_driver.get_user(params)
 
     print("USER FROM MONGO: ", user)
 
     if user == None or isinstance(user, bool):
 
-        user = mongo_driver.create_user(request.data)
-
-        time_limit = datetime.datetime.utcnow() + datetime.timedelta(minutes=180) #Tiempo límite, no se valida en el servidor por el momento, solo en VueJS
-        request.data['exp'] = time_limit
-        payload = request.data
-        del request.data['_id']
-        print()
-        print()
-        print()
-        print(payload)
-        print()
-        print()
-        print()
-        token = jwt.encode(payload,"SECRET_KEY").decode('UTF-8')
-
-        data_str = mongo_driver.get_main_graph()
-        info = mongo_driver.get_graph_info()
-        return JsonResponse({'token':token, 'data':data_str, 'user':user, 'info':info}, safe=False)
+        return JsonResponse({'status':False}, safe=False)
 
     else:
         
@@ -118,7 +99,7 @@ def login(request):
         request.data['exp'] = time_limit
         payload = request.data
         token = jwt.encode(payload,"SECRET_KEY").decode('UTF-8')
-        return JsonResponse({'token':token,'data':data_str, 'info':info, 'user':user}, safe=False)
+        return JsonResponse({'token':token,'data':data_str, 'info':info, 'user':user, 'status': True}, safe=False)
 
 @api_view(['GET','POST'])
 def get_user_level(request):
@@ -147,8 +128,20 @@ def get_questions(request):
 @token_required
 def update_progress(current_user, request):
 
-    print("DATA",request.data)
-
     check = mongo_driver.update_progress(request.data, current_user)
 
     return JsonResponse({'data': check}, safe= False)
+
+@api_view(['GET','POST'])
+def register_user(request):
+
+    print("DATA: ", request.data)
+
+
+    check = mongo_driver.create_user(request.data)
+
+    if isinstance(check, bool):
+        return JsonResponse({'data':False}, safe = False)
+    else:
+        return JsonResponse({'data':True}, safe = False)
+    
